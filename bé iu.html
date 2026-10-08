@@ -1,0 +1,1629 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07050d">
+<title>Yêu vợ Bảo Hân</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Be+Vietnam+Pro:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#07050d;
+  --script:"Great Vibes","Snell Roundhand","Apple Chancery",cursive;
+  --sans:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --s:min(66vw,290px);
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{margin:0;padding:0;background:#000;color:#fbe9f5;font-family:var(--sans);
+  overflow:hidden;overscroll-behavior:none;position:fixed;inset:0;width:100%;
+  -webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}
+button{font-family:inherit}
+
+.screen{position:fixed;inset:0;overflow:hidden}
+#start{background:#000;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#letter{background:var(--ink);visibility:hidden;opacity:0;touch-action:none}
+#letter.open{touch-action:manipulation}
+#letter.on{visibility:visible;opacity:1}
+#letter:not(.on) *,#letter:not(.on) *::before,#letter:not(.on) *::after{animation-play-state:paused!important}
+#start.hide *,#start.hide *::before,#start.hide *::after{animation-play-state:paused!important}
+
+.layer{position:absolute;inset:0;pointer-events:none}
+.suck{position:absolute;inset:0}
+
+/* ============ WEBGL PARTICLE CANVAS ============ */
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;
+  pointer-events:none;z-index:5;opacity:0;transition:opacity .9s ease}
+#gl.on{opacity:1}
+
+/* Lớp atmospheric light field (radial haze) */
+.licht{position:absolute;border-radius:50%;pointer-events:none;filter:blur(40px);opacity:0;will-change:transform,opacity}
+.licht.a{left:20%;top:35%;width:50vmax;height:50vmax;background:radial-gradient(closest-side,rgba(255,180,220,.13),transparent 72%)}
+.licht.b{left:65%;top:55%;width:45vmax;height:45vmax;background:radial-gradient(closest-side,rgba(200,120,220,.10),transparent 72%)}
+.licht.c{left:50%;top:15%;width:35vmax;height:35vmax;background:radial-gradient(closest-side,rgba(255,220,235,.08),transparent 72%)}
+#start.ready .licht.a{animation:lichtA 24s ease-in-out infinite alternate;opacity:.9}
+#start.ready .licht.b{animation:lichtB 30s ease-in-out infinite alternate;opacity:.8}
+#start.ready .licht.c{animation:lichtC 20s ease-in-out infinite alternate;opacity:.7}
+@keyframes lichtA{from{transform:translate(0,0) scale(1)}to{transform:translate(6%,-4%) scale(1.15)}}
+@keyframes lichtB{from{transform:translate(0,0) scale(1)}to{transform:translate(-8%,6%) scale(1.1)}}
+@keyframes lichtC{from{transform:translate(0,0) scale(1)}to{transform:translate(4%,8%) scale(1.05)}}
+
+.blob{position:absolute;left:50%;top:50%;width:150vmax;height:150vmax;margin:-75vmax 0 0 -75vmax;border-radius:50%}
+.bA{will-change:transform;background:radial-gradient(closest-side,rgba(96,40,170,.38),rgba(96,40,170,0) 70%);animation:driftA 26s ease-in-out infinite alternate}
+.bB{background:radial-gradient(closest-side,rgba(176,32,120,.28),rgba(176,32,120,0) 68%)}
+.bC{background:radial-gradient(closest-side,rgba(255,95,165,.18),rgba(255,95,165,0) 66%);animation:driftC 21s ease-in-out infinite alternate;will-change:opacity}
+#start .bA{transform:translate(18%,-12%)}
+#start .bB,#letter .bB{transform:translate(-7%,9%)}
+#start .bC{transform:translate(12%,-2%)}
+#letter .bC{transform:translate(12%,0)}
+@keyframes driftA{from{transform:translate3d(22%,-14%,0) scale(1)}to{transform:translate3d(-18%,-4%,0) scale(1.08)}}
+@keyframes driftC{from{opacity:.55}to{opacity:1}}
+#letter .bA{background:radial-gradient(closest-side,rgba(110,50,190,.55),rgba(110,50,190,0) 70%)}
+#letter .bB{background:radial-gradient(closest-side,rgba(200,36,130,.5),rgba(200,36,130,0) 68%)}
+#letter .bC{background:radial-gradient(closest-side,rgba(255,110,175,.38),rgba(255,110,175,0) 66%)}
+.haze{position:absolute;left:50%;top:60%;width:120vmax;height:70vmax;margin:-35vmax 0 0 -60vmax;border-radius:50%;background:radial-gradient(closest-side,rgba(255,190,225,.2),rgba(255,190,225,0));opacity:.75}
+
+.stars{position:absolute;left:0;top:0;width:1px;height:1px;border-radius:50%;background:transparent;opacity:.9}
+.stars.b{animation:tw 4.5s ease-in-out infinite alternate}
+.stars.c{animation:tw 6.5s ease-in-out -2s infinite alternate}
+@keyframes tw{from{opacity:.15}to{opacity:1}}
+
+.streak{position:absolute;left:0;top:0;width:70vw;height:1px;background:linear-gradient(90deg,transparent,rgba(255,175,220,.5),transparent);opacity:0;will-change:transform,opacity;pointer-events:none}
+.sk1{top:27%;animation:skH 23s linear 3s infinite}
+.sk2{top:78%;animation:skD 31s linear 9s infinite}
+@keyframes skH{0%{transform:translate3d(-80vw,0,0);opacity:0}4%{opacity:.5}38%{opacity:.5}42%,100%{transform:translate3d(115vw,18px,0);opacity:0}}
+@keyframes skD{0%{transform:rotate(-26deg) translate3d(-90vw,0,0);opacity:0}4%{opacity:.4}30%{opacity:.4}34%,100%{transform:rotate(-26deg) translate3d(120vw,0,0);opacity:0}}
+
+.heart-wrap{
+  position:absolute;right:9vw;top:15%;
+  width:var(--s);height:calc(var(--s)*.9);
+  cursor:pointer;pointer-events:auto;outline:none;
+  opacity:0;transform:scale(.94);
+  transition:opacity 1.1s ease .1s,transform 1.1s cubic-bezier(.2,.8,.2,1) .1s;
+  z-index:6;
+}
+.heart-wrap:focus-visible{outline:2px solid #ffd1e6;outline-offset:10px;border-radius:24px}
+#start.ready .heart-wrap{opacity:1;transform:none}
+
+.zoomer{position:absolute;inset:0;perspective:720px;perspective-origin:50% 47%;transform-origin:50% 47%}
+.scene{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform}
+
+.hshadow{position:absolute;left:6%;top:84%;width:88%;height:26%;background:radial-gradient(closest-side,rgba(255,60,135,.3),rgba(190,40,160,.12) 60%,transparent);opacity:.6;will-change:transform,opacity;pointer-events:none}
+.bloom{position:absolute;left:-26%;top:-22%;width:152%;height:148%;background:radial-gradient(closest-side,rgba(255,60,120,.36),rgba(255,60,120,.12) 55%,transparent 100%);animation:bloomB 6.3s ease-in-out infinite alternate;pointer-events:none;will-change:transform,opacity}
+@keyframes bloomB{from{opacity:.55;transform:scale(.94)}to{opacity:1;transform:scale(1.06)}}
+.tglow{position:absolute;left:-12%;top:-10%;width:124%;height:120%;background:radial-gradient(closest-side,rgba(255,110,170,.5),rgba(255,70,140,.14) 62%,transparent 100%);opacity:0;will-change:transform,opacity;pointer-events:none}
+.flash{position:absolute;left:-20%;top:-16%;width:140%;height:136%;background:radial-gradient(closest-side,rgba(255,200,230,.5),transparent 75%);opacity:0;animation:flash 13s ease-in-out 5s infinite;pointer-events:none}
+@keyframes flash{0%,88%{opacity:0;transform:scale(.9)}92%{opacity:.5;transform:scale(1.05)}100%{opacity:0;transform:scale(1.18)}}
+
+.heart-pulse{position:absolute;inset:0;animation:beatA 10.6s ease-in-out infinite;will-change:transform}
+.heart-body{position:absolute;inset:0;transform-style:preserve-3d}
+@keyframes beatA{0%,100%{transform:scale(1)}5%{transform:scale(1.025)}10%{transform:scale(1)}15%{transform:scale(1.015)}21%{transform:scale(1)}47%{transform:scale(1.01)}53%{transform:scale(1)}58%{transform:scale(1.022)}63%{transform:scale(1)}68%{transform:scale(1.012)}74%{transform:scale(1)}}
+
+.surface{
+  position:absolute;inset:0;overflow:hidden;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 90' preserveAspectRatio='none'%3E%3Cpath d='M50 84 C18 60 4 42 4 26 C4 12 15 4 27 4 C37 4 45 10 50 18 C55 10 63 4 73 4 C85 4 96 12 96 26 C96 42 82 60 50 84 Z'/%3E%3C/svg%3E") 0 0/100% 100% no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 90' preserveAspectRatio='none'%3E%3Cpath d='M50 84 C18 60 4 42 4 26 C4 12 15 4 27 4 C37 4 45 10 50 18 C55 10 63 4 73 4 C85 4 96 12 96 26 C96 42 82 60 50 84 Z'/%3E%3C/svg%3E") 0 0/100% 100% no-repeat;
+  background:
+    radial-gradient(58% 42% at 30% 26%,rgba(255,235,245,.32),transparent 62%),
+    radial-gradient(58% 42% at 46% 42%,rgba(255,185,220,.22),transparent 72%),
+    radial-gradient(78% 52% at 72% 82%,rgba(196,44,150,.30),transparent 78%),
+    radial-gradient(70% 60% at 22% 78%,rgba(120,18,88,.42),transparent 80%),
+    linear-gradient(165deg,rgba(130,12,68,.74),rgba(26,2,24,.9));
+}
+.surface::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(46% 40% at 50% 58%,rgba(255,205,230,.55),rgba(230,80,165,.32) 42%,rgba(140,20,110,.08) 72%,transparent 90%);
+  mix-blend-mode:screen;opacity:.9;
+}
+.surface::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 100% at 50% 50%,transparent 62%,rgba(255,140,195,.22) 82%,rgba(255,200,225,.4) 100%);
+  mix-blend-mode:screen;opacity:.55;
+}
+.sg{position:absolute;border-radius:50%}
+.sg1{will-change:transform;left:-10%;top:-20%;width:90%;height:90%;background:radial-gradient(closest-side,rgba(255,70,120,.6),transparent);animation:sg1 13s ease-in-out infinite alternate}
+.sg2{right:-15%;bottom:-25%;width:95%;height:95%;background:radial-gradient(closest-side,rgba(190,40,170,.5),transparent);transform:translate3d(-17%,-15%,0) scale(.98)}
+.sg3{left:20%;top:25%;width:60%;height:60%;background:radial-gradient(closest-side,rgba(255,110,150,.4),transparent);opacity:.62}
+.sg4{left:18%;top:62%;width:64%;height:46%;background:radial-gradient(closest-side,rgba(255,140,185,.55),transparent);opacity:.7}
+.sg5{left:30%;top:18%;width:40%;height:40%;background:radial-gradient(closest-side,rgba(255,235,245,.32),transparent)}
+.crescent{
+  position:absolute;left:7%;top:6%;width:46%;height:34%;border-radius:50%;
+  background:linear-gradient(150deg,rgba(255,255,255,.46),rgba(255,255,255,0) 62%);
+  transform:translate3d(var(--cx,0px),var(--cy,0px),0) rotate(-28deg);
+  opacity:.86;will-change:transform;
+}
+@keyframes sg1{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(38%,26%,0) scale(1.2)}}
+.spotx{position:absolute;left:14%;top:10%;width:40%;height:30%;will-change:transform}
+.spoty{width:100%;height:100%}
+.spot{width:100%;height:100%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.62),rgba(255,200,225,.22) 55%,transparent);animation:spw 17s ease-in-out infinite;will-change:transform,opacity}
+@keyframes spw{
+  0%,100%{transform:translate3d(-12%,-4%,0) rotate(-24deg) scaleY(.7);opacity:.25}
+  20%{transform:translate3d(40%,28%,0) rotate(-24deg) scaleY(.7);opacity:.75}
+  42%{transform:translate3d(70%,80%,0) rotate(-24deg) scaleY(.7);opacity:.5}
+  63%{transform:translate3d(20%,100%,0) rotate(-24deg) scaleY(.7);opacity:.8}
+  82%{transform:translate3d(-8%,40%,0) rotate(-24deg) scaleY(.7);opacity:.45}}
+.glint{position:absolute;left:30%;top:24%;width:15%;height:15%;border-radius:50%;background:radial-gradient(closest-side,#fff,rgba(255,215,235,.55) 50%,transparent);opacity:.6;will-change:transform,opacity}
+
+.heart-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.heart-svg.glow{opacity:.8}
+.mail{position:absolute;left:50%;top:49%;width:17%;height:auto;transform:translate(-50%,-50%);animation:bob 3.7s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-62%)}}
+
+.crown{
+  position:absolute;left:24%;top:-6%;width:26%;height:auto;
+  transform-origin:50% 100%;
+  transform:translate3d(var(--kX,0px),var(--kY,0px),0) rotate(var(--kR,-14deg));
+  will-change:transform;
+  pointer-events:none;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.4)) drop-shadow(0 0 6px rgba(255,255,255,.15));
+  opacity:0;
+  z-index:2;
+}
+.crown svg{display:block;width:100%;height:auto;overflow:visible}
+
+.text-orbit{
+  position:absolute;left:50%;top:47%;width:calc(var(--s)*1.85);height:calc(var(--s)*1.85);
+  margin:calc(var(--s)*-.925) 0 0 calc(var(--s)*-.925);
+  pointer-events:none;
+  transform-style:preserve-3d;
+  will-change:transform;
+  opacity:0;
+  transition:opacity 1.4s ease;
+  mix-blend-mode:screen;
+  animation:texSpin 42s linear infinite;
+}
+.text-orbit.show{opacity:1}
+.text-orbit svg{display:block;width:100%;height:100%;overflow:visible}
+.text-orbit text{font-family:var(--sans);font-weight:300;font-size:8.5px;letter-spacing:.32em;fill:#ffffff;opacity:.82}
+.text-orbit .halo{font-size:8.5px;letter-spacing:.32em;fill:rgba(255,200,225,.4);filter:blur(1.4px);opacity:.7}
+@keyframes texSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+.plane{position:absolute;left:50%;top:47%;width:calc(var(--R)*2);height:calc(var(--R)*2);margin:calc(var(--R)*-1) 0 0 calc(var(--R)*-1);transform-style:preserve-3d;will-change:transform}
+.p1{--R:calc(var(--s)*.64);animation:pre1 26s ease-in-out infinite alternate}
+.p2{--R:calc(var(--s)*.57);animation:pre2 33s ease-in-out infinite alternate}
+.p3{--R:calc(var(--s)*.5);animation:pre3 21s ease-in-out infinite alternate}
+@keyframes pre1{from{transform:rotateZ(-19deg) rotateX(71deg)}to{transform:rotateZ(-9deg) rotateX(75deg)}}
+@keyframes pre2{from{transform:rotateZ(14deg) rotateX(76deg)}to{transform:rotateZ(5deg) rotateX(72deg)}}
+@keyframes pre3{from{transform:rotateZ(-64deg) rotateX(66deg)}to{transform:rotateZ(-50deg) rotateX(71deg)}}
+.orb{position:absolute;inset:0;border-radius:50%;--w1:1.2px;--w2:5px;pointer-events:none}
+.orb::before,.orb::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--bg)}
+.orb::before{-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - var(--w1)),#000 calc(100% - var(--w1)));mask:radial-gradient(farthest-side,transparent calc(100% - var(--w1)),#000 calc(100% - var(--w1)))}
+.orb.base::after{display:none}
+.orb::after{opacity:.34;-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - var(--w2)),#000 calc(100% - var(--w2)));mask:radial-gradient(farthest-side,transparent calc(100% - var(--w2)),#000 calc(100% - var(--w2)))}
+.orb.base{--bg:conic-gradient(from 0deg,rgba(255,140,200,.1),rgba(255,140,200,.4) 90deg,rgba(255,165,212,.9) 180deg,rgba(255,140,200,.4) 270deg,rgba(255,140,200,.1) 360deg)}
+.orb.c{--bg:conic-gradient(from 0deg,rgba(255,120,190,0) calc(360deg - var(--L)),rgba(255,140,200,.8) 355deg,#fff 360deg);animation:spin var(--D) linear var(--dl,0s) infinite,fog var(--D) ease-in-out var(--dl,0s) infinite;will-change:transform,opacity}
+.orb.c.rev{animation-direction:reverse,normal}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fog{0%,100%{opacity:.2}50%{opacity:1}}
+
+.layer.lt{z-index:7}
+.title{
+  position:absolute;left:7vw;top:55%;max-width:62vw;pointer-events:none;
+  opacity:0;transform:translateY(14px) scale(.96);
+  transform-origin:left center;
+  will-change:transform,opacity;
+}
+.eyebrow{display:block;font:300 9px/1 var(--sans);letter-spacing:.28em;text-transform:uppercase;color:rgba(255,214,232,.62);margin-bottom:6px}
+.eyebrow i{font-style:normal;color:#ff4f93}
+.t1,.t2{position:relative;display:block;isolation:isolate;font-family:var(--script);line-height:.95;white-space:nowrap}
+.t1{font-size:min(13.5vw,58px);color:#ffd3e7;text-shadow:0 1px 0 rgba(255,255,255,.2)}
+.t2{font-size:min(14.5vw,62px);color:#ff6fae;margin-left:4vw;text-shadow:0 2px 3px rgba(40,0,20,.55)}
+.t1::before,.t2::before{content:attr(data-t);position:absolute;left:0;top:0;z-index:-1;opacity:0;will-change:opacity}
+.t1::before{color:#ff8cc4;text-shadow:0 0 12px rgba(255,90,160,.85),0 0 28px rgba(255,60,140,.5);animation:gIn 2.2s ease 1.2s forwards,gB 8s ease-in-out 3.6s infinite alternate}
+.t2::before{color:#ff5aa0;text-shadow:0 0 14px rgba(255,60,140,.9),0 0 32px rgba(255,40,120,.55);animation:gIn 2.2s ease 1.5s forwards,gB 9.5s ease-in-out 4.2s infinite alternate}
+@keyframes gIn{from{opacity:0}to{opacity:1}}
+@keyframes gB{from{opacity:1}to{opacity:.55}}
+.t1::after,.t2::after{
+  content:attr(data-t);position:absolute;left:0;top:0;color:transparent;pointer-events:none;
+  background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.9) 50%,transparent 62%) no-repeat;
+  background-size:260% 100%;background-position:160% 0;
+  -webkit-background-clip:text;background-clip:text;
+}
+.t1::after{animation:sweep 10.5s ease-in-out 2.4s infinite}
+.t2::after{animation:sweep 11.7s ease-in-out 2.9s infinite}
+@keyframes sweep{0%{background-position:160% 0}15%{background-position:-60% 0}100%{background-position:-60% 0}}
+
+.hint{position:absolute;left:0;right:0;bottom:calc(9% + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:center;gap:9px;font:300 12px/1.4 var(--sans);letter-spacing:.12em;color:rgba(255,214,232,.85);opacity:0;transition:opacity 1.2s ease;pointer-events:none;z-index:3}
+#start.ready .hint{opacity:1}
+.hint .tx{display:block;animation:hintf 3.8s ease-in-out infinite}
+.hint svg{width:12px;height:11px;fill:#ff6fae;animation:hpulse 1.9s ease-in-out infinite}
+@keyframes hintf{0%,100%{opacity:.3;transform:translateY(3px)}50%{opacity:.95;transform:translateY(0)}}
+@keyframes hpulse{0%,100%{transform:scale(.85);opacity:.6}50%{transform:scale(1.25);opacity:1}}
+
+.ring{position:absolute;width:var(--s);height:var(--s);border:2px solid rgba(255,150,195,.85);border-radius:50%;opacity:0;pointer-events:none}
+.flare{position:absolute;left:50%;top:47%;width:calc(var(--s)*.9);height:calc(var(--s)*.9);margin:calc(var(--s)*-.45) 0 0 calc(var(--s)*-.45);border-radius:50%;background:radial-gradient(closest-side,#ffe0ee,rgba(255,150,205,.7) 42%,transparent 72%);opacity:0;pointer-events:none}
+.warp{position:absolute;left:50%;top:47%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,240,248,.95),rgba(255,150,205,.55) 35%,transparent 72%);opacity:0;pointer-events:none;will-change:transform,opacity}
+#start.go .heart-wrap{pointer-events:none}
+#start.go .bloom{animation:none;opacity:1;transform:scale(1.12)}
+#start.go .tglow{opacity:1!important}
+#start.go .heart-svg.glow{animation:none;opacity:1}
+#start.go .ring{animation:rg .6s ease-out .45s forwards}
+#start.go .ring.r2{animation-delay:.6s}
+#start.go .flare{animation:flare .55s ease-out .5s forwards}
+#start.go .warp{animation:warpA .9s ease-out .35s forwards}
+#start.go .title,#start.go .hint{opacity:0;transition:opacity .3s ease 0s}
+@keyframes rg{0%{opacity:.9;transform:scale(.5)}100%{opacity:0;transform:scale(3.6)}}
+@keyframes flare{0%{opacity:0;transform:scale(.3)}40%{opacity:.7;transform:scale(1.3)}100%{opacity:0;transform:scale(3.4)}}
+@keyframes warpA{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(8)}100%{opacity:0;transform:scale(26)}}
+#start.suck-on .suck{transform:scale(.14);opacity:0;transition:transform .75s cubic-bezier(.55,0,.9,.4),opacity .7s ease-in}
+#start.suck-on .lp2 .suck{transform:scale(.04)}
+#flood{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;background:radial-gradient(circle at 60% 40%,#ff9cc6 0%,#ee4f8f 46%,#8c1458 100%);will-change:opacity}
+
+.stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;perspective:1000px}
+.env-in{position:relative}
+.env-tilt{position:relative;will-change:transform}
+.env-bob{position:relative;animation:floaty 7s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.ehalo{position:absolute;left:-30%;top:-48%;width:160%;height:196%;background:radial-gradient(closest-side,rgba(255,100,175,.4),rgba(255,100,175,.12) 60%,transparent);animation:haloB 5.6s ease-in-out infinite alternate;will-change:opacity;pointer-events:none}
+@keyframes haloB{from{opacity:.5}to{opacity:1}}
+
+.env{--E:min(78vw,330px,78vh);position:relative;width:var(--E);height:calc(var(--E)*.68);perspective:900px;isolation:isolate;cursor:pointer;outline:none}
+.env:focus-visible{outline:2px solid #ffd1e6;outline-offset:10px;border-radius:12px}
+
+.eback{position:absolute;inset:0;z-index:1;border-radius:7px;background:linear-gradient(170deg,#e9bcd2,#d68fb2);box-shadow:0 26px 46px rgba(10,0,25,.55),0 0 0 1px rgba(255,200,225,.35),0 0 48px rgba(255,100,175,.28)}
+.eshadow{position:absolute;left:0;right:0;top:0;height:72%;border-radius:7px 7px 0 0;background:radial-gradient(80% 100% at 50% 0%,rgba(35,0,25,.85),rgba(60,0,45,.42) 45%,transparent 82%),linear-gradient(180deg,rgba(45,0,35,.65),rgba(60,0,45,.2) 45%,transparent 85%);opacity:0}
+
+.efront{position:absolute;inset:0;z-index:3;border-radius:7px;overflow:hidden;pointer-events:none}
+.efront i{position:absolute;inset:0;display:block}
+.fl{clip-path:polygon(0 0,50% 56%,0 100%);background:linear-gradient(100deg,#efc6d8,#fbe4ee 72%)}
+.fr{clip-path:polygon(100% 0,50% 56%,100% 100%);background:linear-gradient(260deg,#ecbfd3,#fadfeb 72%)}
+.fb{clip-path:polygon(0 100%,50% 47%,100% 100%);background:linear-gradient(0deg,#fff8fb 0%,#fbe4ed 58%,#f3cddd 100%)}
+.egloss{background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 42%,rgba(170,60,115,.14))}
+.crease{position:absolute;inset:0;width:100%;height:100%}
+
+.flap{position:absolute;left:0;right:0;top:0;height:56%;z-index:4;transform-origin:50% 0;will-change:transform}
+.flap>i{position:absolute;inset:0;display:block;clip-path:polygon(0 0,100% 0,50% 100%);border-radius:7px 7px 0 0}
+.fsh{transform:translateY(3px);background:rgba(70,0,45,.26)}
+.fout{background:linear-gradient(180deg,#fff9fb,#f7d9e6 78%,#efc3d7)}
+.fout::after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.45),transparent 45%)}
+.fin{opacity:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.14) 0 2px,transparent 2px 8px),linear-gradient(180deg,#cf86ab,#e7aec9)}
+
+.seal{position:absolute;left:50%;top:56%;width:calc(var(--E)*.17);height:calc(var(--E)*.17);margin:calc(var(--E)*-.085) 0 0 calc(var(--E)*-.085);z-index:7;pointer-events:none}
+.sbody{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 28%,#ff8fba,#e0286f 56%,#a30e4c);box-shadow:0 2px 7px rgba(80,0,40,.55),inset 0 -3px 5px rgba(80,0,30,.45),inset 0 2px 3px rgba(255,205,228,.6);animation:sealp 3.4s ease-in-out infinite;will-change:transform}
+.sbody svg{width:52%;height:52%;fill:#ffdcec;opacity:.95;display:block}
+@keyframes sealp{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.sglow{position:absolute;inset:-70%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,160,210,.95),rgba(255,100,170,.3) 55%,transparent);opacity:0;will-change:transform,opacity}
+.sp{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:radial-gradient(circle,#fff 0%,#ffb0d6 45%,transparent 72%);opacity:0;pointer-events:none;will-change:transform,opacity}
+.burst2{position:absolute;left:50%;top:50%;width:0;height:0;z-index:9;pointer-events:none}
+
+.hint2{position:absolute;left:50%;top:calc(100% + 40px);transform:translateX(-50%);white-space:nowrap;font:300 13px/1.4 var(--sans);letter-spacing:.1em;color:rgba(255,222,238,.92);opacity:0;transition:opacity .9s ease;pointer-events:none;z-index:8}
+.hint2.show{opacity:1}
+.hint2 span{display:block;animation:h2 4.2s ease-in-out infinite}
+@keyframes h2{0%,100%{opacity:.62;transform:translateY(1px)}50%{opacity:1;transform:translateY(-2px)}}
+
+.sheet{--lw:min(88vw,360px);--lh:min(78vh,600px);position:absolute;z-index:2;width:var(--lw);height:var(--lh);left:calc(50% - var(--lw)/2);top:calc(50% - var(--lh)/2);opacity:0;transform:scale(.7);transform-origin:50% 50%}
+@supports (height:1dvh){.sheet{--lh:min(78dvh,600px)}}
+.paper{position:absolute;inset:0;border-radius:16px;overflow:hidden;background:radial-gradient(80% 48% at 18% 5%,rgba(255,255,255,.88),transparent 72%),radial-gradient(70% 55% at 92% 100%,rgba(244,160,200,.42),transparent 74%),radial-gradient(50% 40% at 15% 92%,rgba(255,215,235,.34),transparent 76%),linear-gradient(165deg,#fffaf6 0%,#fdeff1 52%,#f7d5e5 100%);box-shadow:0 24px 54px rgba(15,0,30,.55),0 0 40px rgba(255,120,190,.34),inset 0 0 0 1px rgba(255,255,255,.78),inset 0 0 42px rgba(214,130,170,.28)}
+.paper::before{content:"";position:absolute;inset:0;opacity:.38;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .28 0 0 0 0 .4 0 0 0 .4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.paper::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(180,80,130,.09),transparent 22%,transparent 82%,rgba(180,80,130,.07));mix-blend-mode:multiply}
+.wm{position:absolute;left:50%;top:52%;width:66%;height:auto;transform:translate(-50%,-50%);fill:#e0568f;opacity:.07;pointer-events:none}
+.petal{position:absolute;width:17px;height:11px;border-radius:80% 0 80% 0;background:linear-gradient(135deg,#ffc9e0,#f48cb8);opacity:.36;pointer-events:none}
+.pt1{right:12%;top:5%;transform:rotate(32deg)}
+.pt2{left:7%;top:13%;transform:rotate(-24deg) scale(.7)}
+.pt3{right:6%;bottom:14%;transform:rotate(118deg) scale(.85)}
+.pt4{left:12%;bottom:7%;transform:rotate(-70deg) scale(.6)}
+.scroll{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;padding:30px 26px 44px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.lfade{position:absolute;left:0;right:0;bottom:0;height:38px;background:linear-gradient(to top,rgba(249,221,233,.96),transparent);pointer-events:none}
+.lsweep{position:absolute;left:0;top:-20%;width:30%;height:140%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);opacity:0;pointer-events:none;will-change:transform,opacity}
+.letter-title{margin:0 0 20px;font:400 33px/1.15 var(--script);color:#b02a6e}
+.letter-title::after{content:"";display:block;width:54px;height:1.5px;margin-top:12px;background:linear-gradient(90deg,#e0568f,transparent)}
+.p{margin:0 0 15px;font:400 14px/1.8 var(--sans);color:#4a2a3f}
+.p.sign{font:400 31px/1.2 var(--script);color:#b02a6e;margin:22px 0 0}
+.rv{opacity:0;transform:translateY(10px) scale(.985);transition:opacity .95s cubic-bezier(.22,.8,.3,1),transform .95s cubic-bezier(.22,.8,.3,1)}
+.rv.show{opacity:1;transform:none}
+.rv.done{transition:none}
+.rv.sign.show{transition-duration:1.4s}
+
+.close{position:absolute;right:calc(14px + env(safe-area-inset-right,0px));top:calc(12px + env(safe-area-inset-top,0px));width:40px;height:40px;border:0;border-radius:50%;background:rgba(20,4,30,.4);color:rgba(255,220,238,.9);font:300 18px/1 var(--sans);cursor:pointer;z-index:6;opacity:0;pointer-events:none;transition:opacity .7s ease}
+#letter.open .close{opacity:1;pointer-events:auto}
+.close:focus-visible{outline:2px solid #ffd1e6;outline-offset:3px}
+
+.lowfx .sk2,.lowfx .stars.c,.lowfx .flash,.lowfx .p3,.lowfx .petal.pt3,.lowfx .petal.pt4{display:none}
+.lowfx .paper::before{display:none}
+
+@media (prefers-reduced-motion:reduce){
+  .streak,.stars.b,.stars.c,.flash,.orb.c{display:none!important}
+  .blob,.plane,.sg1,.spot,.env-bob,.ehalo,.mail,.hint .tx,.heart-pulse,.bloom,.t1::after,.t2::after,.sbody,.crescent,.text-orbit,.licht{animation:none!important}
+  .t1::before,.t2::before{animation:none!important;opacity:1}
+  .p1{transform:rotateZ(-14deg) rotateX(73deg)}.p2{transform:rotateZ(10deg) rotateX(74deg)}.p3{transform:rotateZ(-57deg) rotateX(68deg)}
+  .heart-wrap,.hint,.text-orbit,.crown{opacity:1!important;transform:none!important;transition:none!important}
+  .rv{transform:none;transition:opacity .4s ease}
+}
+@media (max-height:600px){.title{top:58%}.heart-wrap{top:10%}.t1{font-size:40px}.t2{font-size:44px}}
+</style>
+</head>
+<body>
+<main>
+  <section id="start" class="screen" aria-label="Trang đầu">
+    <canvas id="gl" aria-hidden="true"></canvas>
+
+    <div class="licht a"></div>
+    <div class="licht b"></div>
+    <div class="licht c"></div>
+
+    <div class="layer lg"><div class="suck">
+      <div class="blob bA"></div><div class="blob bB"></div><div class="blob bC"></div>
+      <div class="stars" id="s1"></div><div class="stars b" id="s2"></div><div class="stars c" id="s3"></div>
+    </div></div>
+    <div class="streak sk1"></div><div class="streak sk2"></div>
+
+    <div class="layer lh">
+      <div class="heart-wrap" id="heartBtn" role="button" tabindex="0" aria-label="Chạm vào trái tim để mở thư">
+        <div class="zoomer" id="zoomer">
+          <div class="hshadow" id="hsh"></div>
+          <div class="bloom"></div>
+          <div class="tglow" id="tglow"></div>
+          <div class="flash"></div>
+          <div class="scene" id="scene">
+            <div class="plane p1"><div class="orb base"></div><div class="orb c" style="--L:95deg;--D:21s;--w1:1.6px;--dl:-4s"></div></div>
+            <div class="plane p2"><div class="orb base"></div><div class="orb c rev" style="--L:80deg;--D:27s;--w1:1.4px;--dl:-12s"></div></div>
+            <div class="plane p3"><div class="orb base"></div><div class="orb c" style="--L:60deg;--D:17s;--w1:1.4px;--dl:-7s"></div></div>
+
+            <div class="text-orbit" id="textOrbit" aria-hidden="true">
+              <svg viewBox="0 0 400 400">
+                <defs><path id="ioPath" d="M 200,200 m -180,0 a 180,180 0 1,1 360,0 a 180,180 0 1,1 -360,0"/></defs>
+                <text class="halo"><textPath href="#ioPath" startOffset="0%">i love you • i love you • i love you • i love you • i love you • </textPath></text>
+                <text><textPath href="#ioPath" startOffset="0%">i love you • i love you • i love you • i love you • i love you • </textPath></text>
+              </svg>
+            </div>
+
+            <div class="heart-pulse">
+              <div class="heart-body">
+                <div class="crown" id="crown" aria-hidden="true">
+                  <svg viewBox="0 0 60 40">
+                    <defs>
+                      <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stop-color="#ffffff"/>
+                        <stop offset=".35" stop-color="#dde0e8"/>
+                        <stop offset=".65" stop-color="#a4a8b4"/>
+                        <stop offset="1" stop-color="#71757f"/>
+                      </linearGradient>
+                      <linearGradient id="silver2" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#ffffff" stop-opacity=".9"/>
+                        <stop offset=".5" stop-color="#ffffff" stop-opacity="0"/>
+                        <stop offset="1" stop-color="#8a8e99" stop-opacity=".4"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="M4 34 L9 12 L19 24 L30 6 L41 24 L51 12 L56 34 Z" fill="url(#silver)" stroke="#eef0f6" stroke-width=".6" stroke-linejoin="round"/>
+                    <path d="M4 34 L9 12 L19 24 L30 6 L41 24 L51 12 L56 34 Z" fill="url(#silver2)" opacity=".65"/>
+                    <rect x="4" y="32" width="52" height="3.2" rx="1.2" fill="url(#silver)" stroke="#eef0f6" stroke-width=".4"/>
+                    <circle cx="30" cy="6" r="2.6" fill="#ffffff"/>
+                    <circle cx="30" cy="6" r="1.2" fill="#ffe4f0"/>
+                    <circle cx="9" cy="12" r="1.9" fill="#ffffff"/>
+                    <circle cx="51" cy="12" r="1.9" fill="#ffffff"/>
+                    <circle cx="19" cy="24" r="1.3" fill="#eaf2ff"/>
+                    <circle cx="41" cy="24" r="1.3" fill="#eaf2ff"/>
+                    <path d="M30 1 L30.8 4.2 L34 5 L30.8 5.8 L30 9 L29.2 5.8 L26 5 L29.2 4.2 Z" fill="#ffffff" opacity=".85"/>
+                  </svg>
+                </div>
+
+                <svg class="heart-svg glow" viewBox="0 0 100 90" aria-hidden="true">
+                  <path d="M50 84 C 18 60 4 42 4 26 C 4 12 15 4 27 4 C 37 4 45 10 50 18 C 55 10 63 4 73 4 C 85 4 96 12 96 26 C 96 42 82 60 50 84 Z" fill="none" stroke="#ff2f78" stroke-width="4.2" stroke-opacity=".16" stroke-linejoin="round"/>
+                  <path d="M50 84 C 18 60 4 42 4 26 C 4 12 15 4 27 4 C 37 4 45 10 50 18 C 55 10 63 4 73 4 C 85 4 96 12 96 26 C 96 42 82 60 50 84 Z" fill="none" stroke="#ff2f78" stroke-width="2.4" stroke-opacity=".32" stroke-linejoin="round"/>
+                  <path d="M50 84 C 18 60 4 42 4 26 C 4 12 15 4 27 4 C 37 4 45 10 50 18 C 55 10 63 4 73 4 C 85 4 96 12 96 26 C 96 42 82 60 50 84 Z" fill="none" stroke="rgba(255,205,230,.55)" stroke-width="1.1" stroke-opacity=".55" stroke-linejoin="round"/>
+                </svg>
+                <div class="surface">
+                  <div class="sg sg1"></div><div class="sg sg2"></div><div class="sg sg3"></div><div class="sg sg4"></div><div class="sg sg5"></div>
+                  <div class="crescent" id="crescent"></div>
+                  <div class="spotx" id="spotx"><div class="spoty"><div class="spot"></div></div></div>
+                  <div class="glint" id="glint"></div>
+                </div>
+                <svg class="heart-svg" viewBox="0 0 100 90" aria-hidden="true">
+                  <path d="M50 84 C 18 60 4 42 4 26 C 4 12 15 4 27 4 C 37 4 45 10 50 18 C 55 10 63 4 73 4 C 85 4 96 12 96 26 C 96 42 82 60 50 84 Z" fill="none" stroke="#ff7aa8" stroke-width="1.3" stroke-linejoin="round"/>
+                  <path d="M50 84 C 18 60 4 42 4 26 C 4 12 15 4 27 4 C 37 4 45 10 50 18 C 55 10 63 4 73 4 C 85 4 96 12 96 26 C 96 42 82 60 50 84 Z" fill="none" stroke="#ffe3ef" stroke-width=".45" stroke-linejoin="round"/>
+                </svg>
+                <svg class="mail" viewBox="0 0 40 28" aria-hidden="true">
+                  <rect x="1.5" y="1.5" width="37" height="25" rx="4" fill="rgba(255,60,130,.25)" stroke="#ffd1e6" stroke-width="1.6"/>
+                  <path d="M3 5 L20 17 L37 5" fill="none" stroke="#ffd1e6" stroke-width="1.4" stroke-linejoin="round"/>
+                  <path d="M20 16.5 C 15 12.5 16 8.5 18.4 8.5 C 19.4 8.5 20 9.2 20 9.8 C 20 9.2 20.6 8.5 21.6 8.5 C 24 8.5 25 12.5 20 16.5 Z" fill="#fff" transform="translate(0 2)"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="flare"></div>
+          <div class="warp"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer lt"><div class="title" id="title">
+      <span class="eyebrow">— 20/10 hạnh phúc <i>♥</i></span>
+      <span class="t1" data-t="yêu vợ" id="tt1">yêu vợ</span>
+      <span class="t2" data-t="Bảo Hân" id="tt2">Bảo Hân</span>
+    </div></div>
+    <div class="hint"><svg viewBox="0 0 24 22" aria-hidden="true"><use href="#hs"/></svg><span class="tx">chạm vào trái tim</span></div>
+
+    <div class="ring" id="ring1"></div><div class="ring r2" id="ring2"></div>
+  </section>
+
+  <section id="letter" class="screen" aria-label="Phong bì và lá thư">
+    <div class="layer lg"><div class="blob bA"></div><div class="blob bB"></div><div class="blob bC"></div><div class="haze"></div></div>
+    <div class="streak sk1"></div><div class="streak sk2"></div>
+
+    <div class="stage">
+      <div class="env-in" id="envIn">
+        <div class="env-tilt" id="envTilt">
+          <div class="env-bob">
+            <div class="ehalo"></div>
+            <div class="env" id="env" role="button" tabindex="0" aria-label="Chạm để mở phong bì">
+              <div class="eback"><div class="eshadow" id="eshadow"></div></div>
+
+              <div class="sheet" id="sheet">
+                <div class="paper">
+                  <svg class="wm" viewBox="0 0 24 22" aria-hidden="true"><use href="#hs"/></svg>
+                  <i class="petal pt1"></i><i class="petal pt2"></i><i class="petal pt3"></i><i class="petal pt4"></i>
+                  <div class="scroll" id="scroll">
+                    <h1 class="letter-title rv">20/10 vui vẻ nha bạn ❤️</h1>
+                    <p class="p rv">Mình chúc bạn lúc nào cũng vui vẻ, xinh đẹp và hạnh phúc nha. Mình biết thời gian qua mình đã nhiều lần làm bạn buồn, có những lúc khiến bạn phải suy nghĩ nhiều. Mình xin lỗi bạn vì những điều đó. Mình biết mình còn nhiều thiếu sót, nhưng tình cảm mình dành cho bạn là thật lòng. Mình sẽ cố gắng thay đổi, quan tâm và yêu thương bạn nhiều hơn.</p>
+                    <p class="p rv">Cảm ơn bạn vì dù mình chưa tốt, bạn vẫn ở bên mình. Mình mong hai đứa mình cứ thương nhau, cùng nhau cố gắng và sau này vẫn luôn có nhau.</p>
+                    <p class="p sign rv">Mình thương bạn nhiều lắm ❤️</p>
+                  </div>
+                  <div class="lfade"></div>
+                  <div class="lsweep" id="lsweep"></div>
+                </div>
+              </div>
+
+              <div class="efront" id="efront">
+                <i class="fl"></i><i class="fr"></i><i class="fb"></i><i class="egloss"></i>
+                <svg class="crease" viewBox="0 0 100 68" preserveAspectRatio="none" aria-hidden="true">
+                  <g fill="none" stroke-linejoin="round" vector-effect="non-scaling-stroke">
+                    <path d="M0 0 L50 38 L100 0" stroke="rgba(150,50,100,.2)" stroke-width="1"/>
+                    <path d="M0 68 L50 32 L100 68" stroke="rgba(255,255,255,.75)" stroke-width="1"/>
+                    <path d="M0 68 L50 32 L100 68" stroke="rgba(150,50,100,.16)" stroke-width="1" transform="translate(0 .6)"/>
+                  </g>
+                </svg>
+              </div>
+
+              <div class="flap" id="flap"><i class="fsh"></i><i class="fout" id="fout"></i><i class="fin" id="fin"></i></div>
+
+              <div class="seal" id="seal">
+                <div class="sglow"></div>
+                <div class="sbody"><svg viewBox="0 0 24 22" aria-hidden="true"><use href="#hs"/></svg></div>
+              </div>
+              <div class="burst2" id="burst2"></div>
+
+              <div class="hint2" id="hint2"><span>Chạm thêm một lần nữa ❤️</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="close" id="closeBtn" aria-label="Đóng thư">✕</button>
+  </section>
+  <div id="flood"></div>
+</main>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="hs" viewBox="0 0 24 22"><path d="M12 21 C 4 15 1 11 1 7 C 1 3.5 3.6 1.5 6.4 1.5 C 8.8 1.5 11 3 12 5 C 13 3 15.2 1.5 17.6 1.5 C 20.4 1.5 23 3.5 23 7 C 23 11 20 15 12 21 Z"/></symbol>
+  <symbol id="sp" viewBox="0 0 24 24"><path d="M12 0 C 12.8 7.5 16.5 11.2 24 12 C 16.5 12.8 12.8 16.5 12 24 C 11.2 16.5 7.5 12.8 0 12 C 7.5 11.2 11.2 7.5 12 0 Z"/></symbol>
+</svg>
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     YÊU VỢ BẢO HÂN — WebGL cinematic particle experience
+     Kiến trúc:
+       1. Tier detect + adaptive particle count (6k – 50k)
+       2. WebGL POINTS renderer (shader-based soft glow)
+       3. TypedArray particle storage (không dùng object JS)
+       4. 1 main RAF loop, delta-time, fixed-step physics
+       5. 4 role particle: HEART / AURA / ORBIT / FREE
+       6. Heart path sampler → chính silhouette SVG hiện tại
+       7. State machine phase-based (không timeout rời rạc)
+       8. Pointer parallax nhiều tầng (heart/orbit/fg/bg)
+       9. Envelope press + spring + letter rise (giữ nguyên DNA)
+      10. Reduced-motion + adaptive fallback
+     ============================================================ */
+
+  /* ---------- SHORTCUT ---------- */
+  var $ = function (id) { return document.getElementById(id); };
+  var root = document.documentElement;
+  var start = $('start'), letter = $('letter');
+  var scene = $('scene'), zoomer = $('zoomer'), flood = $('flood');
+  var hb = $('heartBtn'), env = $('env'), envIn = $('envIn'), envTilt = $('envTilt'), sheet = $('sheet');
+  var flap = $('flap'), fout = $('fout'), fin = $('fin'), seal = $('seal'), hint2 = $('hint2');
+  var eshadow = $('eshadow'), efront = $('efront'), scrollEl = $('scroll'), lsweep = $('lsweep');
+  var spotx = $('spotx'), glint = $('glint'), tglow = $('tglow'), hsh = $('hsh');
+  var crescent = $('crescent');
+  var crownEl = $('crown');
+  var textOrbit = $('textOrbit');
+  var titleEl = $('title'), tt1 = $('tt1'), tt2 = $('tt2');
+  var eyebrow = titleEl ? titleEl.querySelector('.eyebrow') : null;
+  var glCanvas = $('gl');
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  var hasWAAPI = typeof Element.prototype.animate === 'function';
+
+  /* ============================================================
+     1. TIER + ADAPTIVE PARTICLE COUNT
+     ============================================================ */
+  var rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hc = navigator.hardwareConcurrency || 4;
+  var mem = navigator.deviceMemory || 4;
+  var tier = 'high';
+  if (rm) tier = 'verylow';
+  else if (hc <= 2 || mem <= 1) tier = 'verylow';
+  else if (hc <= 4 || mem <= 2) tier = 'low';
+  else if (hc <= 6 || mem <= 4) tier = 'mid';
+  else tier = 'high';
+
+  var TIER = {
+    verylow: { count:   6000, dpr: 1.25, connections: false },
+    low:     { count:  14000, dpr: 1.5,  connections: false },
+    mid:     { count:  28000, dpr: 1.75, connections: true  },
+    high:    { count:  45000, dpr: 2,    connections: true  }
+  };
+  var conf = TIER[tier];
+  var PT_MAX = conf.count;
+  var DPR_CAP = conf.dpr;
+  var CONN_ENABLED = conf.connections && !rm;
+
+  if (tier !== 'high') root.classList.add('lowfx');
+
+  /* ============================================================
+     2. WEBGL RENDERER
+     ============================================================ */
+  var gl = null, useGL = false;
+  try {
+    gl = glCanvas.getContext('webgl', {
+      antialias: false, alpha: true, premultipliedAlpha: true,
+      powerPreference: 'high-performance', depth: false, stencil: false
+    }) || glCanvas.getContext('experimental-webgl');
+  } catch (e) { gl = null; }
+  useGL = !!gl;
+
+  var prog, bufPos, bufColor, aPosLoc, aColorLoc, aSizeLoc, aAlphaLoc, aDepthLoc;
+  var uResLoc, uParallaxLoc, uGlobalAlphaLoc;
+
+  if (useGL) {
+    var vsSrc =
+      'attribute vec2 aPos;\n' +
+      'attribute vec3 aColor;\n' +
+      'attribute float aSize;\n' +
+      'attribute float aAlpha;\n' +
+      'attribute float aDepth;\n' +
+      'uniform vec2 uResolution;\n' +
+      'uniform vec2 uParallax;\n' +
+      'uniform float uGlobalAlpha;\n' +
+      'varying vec3 vColor;\n' +
+      'varying float vAlpha;\n' +
+      'void main() {\n' +
+      '  vec2 p = aPos + uParallax * aDepth;\n' +
+      '  vec2 clip = (p / uResolution) * 2.0 - 1.0;\n' +
+      '  gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);\n' +
+      '  gl_PointSize = aSize;\n' +
+      '  vColor = aColor;\n' +
+      '  vAlpha = aAlpha * uGlobalAlpha;\n' +
+      '}\n';
+
+    var fsSrc =
+      'precision mediump float;\n' +
+      'varying vec3 vColor;\n' +
+      'varying float vAlpha;\n' +
+      'void main() {\n' +
+      '  vec2 d = gl_PointCoord - vec2(0.5);\n' +
+      '  float r = length(d) * 2.0;\n' +
+      '  if (r > 1.0) discard;\n' +
+      '  float soft = 1.0 - r;\n' +
+      '  soft = soft * soft;\n' +
+      '  float core = smoothstep(0.7, 0.0, r);\n' +
+      '  float a = (core * 0.85 + soft * 0.45) * vAlpha;\n' +
+      '  if (a < 0.008) discard;\n' +
+      '  vec3 c = vColor * (0.6 + core * 0.75);\n' +
+      '  gl_FragColor = vec4(c, a);\n' +
+      '}\n';
+
+    function compile(type, src) {
+      var s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.error('Shader error:', gl.getShaderInfoLog(s));
+        return null;
+      }
+      return s;
+    }
+    var vs = compile(gl.VERTEX_SHADER, vsSrc);
+    var fs = compile(gl.FRAGMENT_SHADER, fsSrc);
+    if (vs && fs) {
+      prog = gl.createProgram();
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        console.error('Program link error:', gl.getProgramInfoLog(prog));
+        prog = null;
+      }
+    }
+    if (prog) {
+      gl.useProgram(prog);
+      aPosLoc   = gl.getAttribLocation(prog, 'aPos');
+      aColorLoc = gl.getAttribLocation(prog, 'aColor');
+      aSizeLoc  = gl.getAttribLocation(prog, 'aSize');
+      aAlphaLoc = gl.getAttribLocation(prog, 'aAlpha');
+      aDepthLoc = gl.getAttribLocation(prog, 'aDepth');
+      uResLoc = gl.getUniformLocation(prog, 'uResolution');
+      uParallaxLoc = gl.getUniformLocation(prog, 'uParallax');
+      uGlobalAlphaLoc = gl.getUniformLocation(prog, 'uGlobalAlpha');
+
+      gl.disable(gl.DEPTH_TEST);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // additive
+
+      bufPos   = gl.createBuffer();
+      bufColor = gl.createBuffer();
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufColor);
+      gl.enableVertexAttribArray(aColorLoc);
+      gl.vertexAttribPointer(aColorLoc, 3, gl.FLOAT, false, 0, 0);
+
+      // position buffer sẽ được update mỗi frame
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufPos);
+      gl.enableVertexAttribArray(aPosLoc);
+      gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 20, 0);
+
+      gl.enableVertexAttribArray(aSizeLoc);
+      gl.vertexAttribPointer(aSizeLoc, 1, gl.FLOAT, false, 20, 8);
+
+      gl.enableVertexAttribArray(aAlphaLoc);
+      gl.vertexAttribPointer(aAlphaLoc, 1, gl.FLOAT, false, 20, 12);
+
+      gl.enableVertexAttribArray(aDepthLoc);
+      gl.vertexAttribPointer(aDepthLoc, 1, gl.FLOAT, false, 20, 16);
+    } else {
+      useGL = false;
+    }
+  }
+
+  /* ============================================================
+     3. CANVAS / VIEWPORT
+     ============================================================ */
+  var W = 0, H = 0, DPR = 1;
+  function sizeCanvas() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    DPR = Math.min(DPR_CAP, window.devicePixelRatio || 1);
+    glCanvas.width  = Math.max(1, Math.floor(W * DPR));
+    glCanvas.height = Math.max(1, Math.floor(H * DPR));
+    glCanvas.style.width  = W + 'px';
+    glCanvas.style.height = H + 'px';
+    if (useGL) {
+      gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+      gl.uniform2f(uResLoc, W, H);
+    }
+  }
+
+  /* ============================================================
+     4. PARTICLE STORAGE (TypedArray)
+     ============================================================ */
+  // Mảng song song — không dùng object JS cho từng particle
+  var px = new Float32Array(PT_MAX);     // position x
+  var py = new Float32Array(PT_MAX);     // position y
+  var vx = new Float32Array(PT_MAX);     // velocity x
+  var vy = new Float32Array(PT_MAX);     // velocity y
+  var tx = new Float32Array(PT_MAX);     // target x
+  var ty = new Float32Array(PT_MAX);     // target y
+  var sz = new Float32Array(PT_MAX);     // base size
+  var al = new Float32Array(PT_MAX);     // base alpha
+  var dp = new Float32Array(PT_MAX);     // depth 0..1
+  var ph = new Float32Array(PT_MAX);     // phase
+  var dl = new Float32Array(PT_MAX);     // delay (ms)
+  var rl = new Uint8Array(PT_MAX);       // role: 0=HEART,1=AURA,2=ORBIT,3=FREE
+  var cr = new Float32Array(PT_MAX);     // color r
+  var cg = new Float32Array(PT_MAX);     // color g
+  var cb = new Float32Array(PT_MAX);     // color b
+  var ca = new Float32Array(PT_MAX);     // current appear alpha (0..1)
+
+  // interleaved GPU buffer: [x, y, size, alpha, depth] * PT_MAX
+  var gpuData = new Float32Array(PT_MAX * 5);
+
+  // color buffer — upload 1 lần
+  var colorData = new Float32Array(PT_MAX * 3);
+
+  /* ============================================================
+     5. HEART PATH SAMPLER (dùng chính silhouette hiện tại)
+     ============================================================ */
+  var HEART_D = 'M50 84 C 18 60 4 42 4 26 C 4 12 15 4 27 4 C 37 4 45 10 50 18 C 55 10 63 4 73 4 C 85 4 96 12 96 26 C 96 42 82 60 50 84 Z';
+  var heartPathEl = null;
+  function getHeartPath() {
+    if (heartPathEl) return heartPathEl;
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 90');
+    svg.style.cssText = 'position:absolute;left:-9999px;top:0;width:20px;height:20px;opacity:0;pointer-events:none';
+    var p = document.createElementNS(ns, 'path');
+    p.setAttribute('d', HEART_D);
+    p.setAttribute('fill', 'none');
+    svg.appendChild(p);
+    document.body.appendChild(svg);
+    heartPathEl = p;
+    return p;
+  }
+
+  var heartCX = 0, heartCY = 0, heartW = 0, heartH = 0;
+  function computeHeartBounds() {
+    var prevT  = hb.style.transform;
+    var prevTr = hb.style.transition;
+    hb.style.transition = 'none';
+    hb.style.transform  = 'none';
+    var r = hb.getBoundingClientRect();
+    hb.style.transform  = prevT;
+    hb.style.transition = prevTr;
+    heartCX = r.left + r.width  / 2;
+    heartCY = r.top  + r.height / 2;
+    heartW  = r.width;
+    heartH  = r.height;
+  }
+
+  /* ============================================================
+     6. PARTICLE INIT (phân role + target + color + depth)
+     ============================================================ */
+  function initParticles() {
+    var path = getHeartPath();
+    var L = path.getTotalLength();
+    var vbW = 100, vbH = 90, hx = 50, hy = 45;
+
+    // role distribution
+    // 35% HEART, 15% AURA, 15% ORBIT, 35% FREE
+    var nHeart = Math.floor(PT_MAX * 0.35);
+    var nAura  = Math.floor(PT_MAX * 0.15);
+    var nOrbit = Math.floor(PT_MAX * 0.15);
+    var nFree  = PT_MAX - nHeart - nAura - nOrbit;
+
+    // HEART particle sample từ path
+    var heartSample = [];
+    var nOutline = Math.floor(nHeart * 0.7);
+    for (var i = 0; i < nOutline; i++) {
+      var pt = path.getPointAtLength((i / nOutline) * L);
+      var pxp = heartCX + (pt.x - hx) / vbW * heartW;
+      var pyp = heartCY + (pt.y - hy) / vbH * heartH;
+      heartSample.push({ x: pxp, y: pyp, edge: true });
+    }
+    for (var j = 0; j < nHeart - nOutline; j++) {
+      var pt2 = path.getPointAtLength(Math.random() * L);
+      var s = 0.2 + Math.random() * 0.72;
+      var ix = hx + (pt2.x - hx) * s;
+      var iy = hy + (pt2.y - hy) * s;
+      heartSample.push({
+        x: heartCX + (ix - hx) / vbW * heartW,
+        y: heartCY + (iy - hy) / vbH * heartH,
+        edge: false
+      });
+    }
+
+    // AURA sample từ vành ellipse quanh heart
+    // ORBIT sample từ 3 quỹ đạo ellipse
+    // FREE random trên màn hình
+
+    for (var k = 0; k < PT_MAX; k++) {
+      var role;
+      var tX, tY;
+      if (k < nHeart) {
+        role = 0;
+        var hs = heartSample[k];
+        tX = hs.x; tY = hs.y;
+      } else if (k < nHeart + nAura) {
+        role = 1;
+        var a = Math.random() * Math.PI * 2;
+        var rad = heartW * (0.72 + Math.random() * 0.32);
+        tX = heartCX + Math.cos(a) * rad;
+        tY = heartCY + Math.sin(a) * rad * 0.85;
+      } else if (k < nHeart + nAura + nOrbit) {
+        role = 2;
+        var oa = Math.random() * Math.PI * 2;
+        var oR = heartW * (0.72 + Math.random() * 0.55);
+        tX = heartCX + Math.cos(oa) * oR;
+        tY = heartCY + Math.sin(oa) * oR * 0.42;
+      } else {
+        role = 3;
+        tX = rand(0, W);
+        tY = rand(0, H);
+      }
+      rl[k] = role;
+      tx[k] = tX;
+      ty[k] = tY;
+
+      // spawn position: random ngoài rìa màn hình
+      var side = Math.floor(Math.random() * 4);
+      var sx, sy;
+      if      (side === 0) { sx = rand(-30, W + 30); sy = -30; }
+      else if (side === 1) { sx = W + 30;             sy = rand(-30, H + 30); }
+      else if (side === 2) { sx = rand(-30, W + 30); sy = H + 30; }
+      else                 { sx = -30;                sy = rand(-30, H + 30); }
+      px[k] = sx; py[k] = sy;
+      vx[k] = rand(-0.15, 0.15);
+      vy[k] = rand(-0.15, 0.15);
+
+      // depth 0..1
+      var d = Math.random();
+      // phân bố depth: nhiều particle ở mid, ít ở fg
+      if (d < 0.32) dp[k] = rand(0.0, 0.25);        // far background
+      else if (d < 0.82) dp[k] = rand(0.25, 0.65);  // midground
+      else dp[k] = rand(0.65, 1.0);                 // foreground
+
+      // size theo depth
+      var dval = dp[k];
+      if (dval < 0.25) sz[k] = rand(0.6, 1.2);
+      else if (dval < 0.65) sz[k] = rand(1.0, 1.8);
+      else sz[k] = rand(1.6, 3.0);
+
+      // alpha theo depth
+      if (dval < 0.25) al[k] = rand(0.18, 0.42);
+      else if (dval < 0.65) al[k] = rand(0.40, 0.75);
+      else al[k] = rand(0.65, 0.98);
+
+      // color: 60% white, 25% soft warm white, 12% pink-white, 3% pink
+      var c = Math.random();
+      if (c < 0.60) {
+        cr[k] = 1.00; cg[k] = 1.00; cb[k] = 1.00;
+      } else if (c < 0.85) {
+        cr[k] = 1.00; cg[k] = 0.94; cb[k] = 0.98;
+      } else if (c < 0.97) {
+        cr[k] = 1.00; cg[k] = 0.82; cb[k] = 0.92;
+      } else {
+        cr[k] = 1.00; cg[k] = 0.62; cb[k] = 0.82;
+      }
+
+      ph[k] = Math.random() * Math.PI * 2;
+      dl[k] = Math.random() * 900;
+      ca[k] = 0;
+
+      colorData[k * 3    ] = cr[k];
+      colorData[k * 3 + 1] = cg[k];
+      colorData[k * 3 + 2] = cb[k];
+
+      gpuData[k * 5    ] = px[k];
+      gpuData[k * 5 + 1] = py[k];
+      gpuData[k * 5 + 2] = sz[k] * DPR;
+      gpuData[k * 5 + 3] = 0;
+      gpuData[k * 5 + 4] = dp[k];
+    }
+
+    if (useGL) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufColor);
+      gl.bufferData(gl.ARRAY_BUFFER, colorData, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufPos);
+      gl.bufferData(gl.ARRAY_BUFFER, gpuData, gl.DYNAMIC_DRAW);
+    }
+  }
+
+  /* ============================================================
+     7. STATE MACHINE
+     ============================================================ */
+  var PHASES = [
+    { name: 'BLACK',    dur: 800  },
+    { name: 'SPAWN',    dur: 1400 },
+    { name: 'CONVERGE', dur: 2200 },
+    { name: 'LOCK',     dur: 900  },
+    { name: 'HEART',    dur: 800  },
+    { name: 'TEXTORB',  dur: 800  },
+    { name: 'CROWN',    dur: 900  },
+    { name: 'TITLE',    dur: 1800 },
+    { name: 'IDLE',     dur: Infinity }
+  ];
+  var phaseIdx = 0, phaseName = 'BLACK', phaseStart = 0;
+
+  function enterPhase(name) {
+    phaseName = name;
+    if (name === 'SPAWN') {
+      canvasFadeTarget = 1;
+    } else if (name === 'HEART') {
+      heartAuraMode = true;
+      if (crownEl) crownEl.style.opacity = '0';
+      start.classList.add('ready');
+    } else if (name === 'TEXTORB') {
+      if (textOrbit) textOrbit.classList.add('show');
+    } else if (name === 'CROWN') {
+      crownDrop();
+    } else if (name === 'TITLE') {
+      titleFlyOut();
+    }
+  }
+
+  /* ============================================================
+     8. POINTER / TOUCH
+     ============================================================ */
+  var pointerActive = false, pointerX = 0, pointerY = 0;
+  var targetTX = 0, targetTY = 0;
+  var txRot = 0, tyRot = 0;              // tilt mượt cho heart
+  var hRotX = 0, hRotY = 0, hRotZ = 0;   // cho scene 3D
+  var screenState = 'start';
+
+  function updatePointerTarget() {
+    if (!pointerActive) return;
+    var cx, cy, R;
+    if (screenState === 'start') {
+      cx = heartCX; cy = heartCY; R = heartW * 1.05;
+    } else {
+      cx = W / 2; cy = H / 2; R = Math.min(W, H) * 0.5;
+    }
+    var dx = (pointerX - cx) / R;
+    var dy = (pointerY - cy) / R;
+    var m = Math.sqrt(dx*dx + dy*dy);
+    if (m > 1) { dx /= m; dy /= m; }
+    targetTX = dx;
+    targetTY = dy;
+  }
+
+  function inHeart(e) {
+    var w = heartW * 0.72, h = heartH * 0.72;
+    return Math.abs(e.clientX - heartCX) <= w && Math.abs(e.clientY - heartCY) <= h;
+  }
+  function inEnv(e) {
+    var r = env.getBoundingClientRect();
+    return e.clientX >= r.left && e.clientX <= r.right &&
+           e.clientY >= r.top  && e.clientY <= r.bottom;
+  }
+
+  function onDown(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (screenState === 'opening' || screenState === 'open') return;
+    pointerActive = true;
+    pointerX = e.clientX; pointerY = e.clientY;
+    updatePointerTarget();
+  }
+  function onMove(e) {
+    if (screenState === 'opening' || screenState === 'open') return;
+    if (e.pointerType !== 'mouse' && !pointerActive) return;
+    pointerActive = true;
+    pointerX = e.clientX; pointerY = e.clientY;
+    updatePointerTarget();
+  }
+  function onUp(e) {
+    if (e.pointerType !== 'mouse') pointerActive = false;
+    if (screenState === 'start' && phaseName === 'IDLE' && inHeart(e)) {
+      tapHeart(); return;
+    }
+    if (screenState === 'env' && envReady && inEnv(e)) {
+      tapEnvelope(); return;
+    }
+  }
+  function onCancel() { pointerActive = false; }
+
+  [start, letter].forEach(function (s) {
+    s.addEventListener('pointerdown',   onDown,   { passive: true });
+    s.addEventListener('pointermove',   onMove,   { passive: true });
+    s.addEventListener('pointerup',     onUp,     { passive: true });
+    s.addEventListener('pointercancel', onCancel, { passive: true });
+    s.addEventListener('pointerleave', function (e) {
+      if (e.pointerType === 'mouse') pointerActive = false;
+    }, { passive: true });
+  });
+
+  hb.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tapHeart(); }
+  });
+  env.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tapEnvelope(); }
+  });
+
+  /* ============================================================
+     9. MAIN RAF LOOP
+     ============================================================ */
+  var raf = 0, lastT = 0;
+  var canvasOpacity = 0, canvasFadeTarget = 0;
+  var heartAuraMode = false;
+  var fixedAccum = 0;
+  var FIXED_DT = 1000 / 60;   // physics step 60Hz, render theo refresh rate
+
+  function loop(t) {
+    raf = requestAnimationFrame(loop);
+    if (!lastT) lastT = t;
+    var dt = Math.min(48, t - lastT);
+    lastT = t;
+    var dtN = dt / 16.7;
+
+    // phase tick
+    if (phaseStart === 0) phaseStart = t;
+    if (phaseName !== 'IDLE') {
+      var dur = PHASES[phaseIdx].dur;
+      if (dur !== Infinity && t - phaseStart >= dur) {
+        phaseIdx++;
+        phaseStart = t;
+        enterPhase(PHASES[phaseIdx].name);
+      }
+    }
+    var phaseElapsed = t - phaseStart;
+    var phaseDur = PHASES[phaseIdx].dur;
+    var phaseProg = phaseDur === Infinity ? 1 : Math.min(1, phaseElapsed / phaseDur);
+
+    // idle drift
+    if (!pointerActive && screenState === 'start') {
+      targetTX = Math.sin(t / 2300) * 0.18;
+      targetTY = Math.cos(t / 3100) * 0.14;
+    } else if (!pointerActive && screenState === 'env') {
+      targetTX = Math.sin(t / 2600) * 0.12;
+      targetTY = Math.cos(t / 3400) * 0.10;
+    }
+
+    // spring interpolation cho tilt
+    var k = 1 - Math.pow(1 - 0.10, dtN);
+    txRot += (targetTX - txRot) * k;
+    tyRot += (targetTY - tyRot) * k;
+    var rXT = -tyRot * 11;
+    var rYT =  txRot * 11;
+    var rZT =  txRot * 2.6;
+    hRotX += (rXT - hRotX) * k;
+    hRotY += (rYT - hRotY) * k;
+    hRotZ += (rZT - hRotZ) * k;
+
+    // fixed-step physics (nếu 120Hz, render 2x, physics vẫn 60Hz)
+    fixedAccum += dt;
+    var iter = 0;
+    while (fixedAccum >= FIXED_DT && iter < 4) {
+      physicsStep(FIXED_DT / 16.7, t);
+      fixedAccum -= FIXED_DT;
+      iter++;
+    }
+    if (fixedAccum > FIXED_DT * 2) fixedAccum = 0;
+
+    // canvas fade
+    canvasOpacity += (canvasFadeTarget - canvasOpacity) * (1 - Math.pow(1 - 0.09, dtN));
+    if (glCanvas) glCanvas.style.opacity = canvasOpacity.toFixed(3);
+
+    // render
+    renderParticles();
+
+    // apply scene
+    if (screenState === 'start' && phaseName !== 'opening') {
+      applyStartScene();
+    } else if (screenState === 'env') {
+      applyEnvScene();
+    }
+  }
+
+  function startLoop() {
+    if (!raf && !document.hidden) { lastT = 0; raf = requestAnimationFrame(loop); }
+  }
+  function stopLoop() {
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  }
+
+  /* ============================================================
+     10. PHYSICS STEP
+     ============================================================ */
+  function physicsStep(dtN, t) {
+    if (phaseName === 'BLACK') return;
+
+    var attract = 0;
+    if (phaseName === 'CONVERGE') {
+      var dur = PHASES[phaseIdx].dur;
+      var prog = dur === Infinity ? 1 : Math.min(1, (performance.now() - phaseStart) / dur);
+      attract = prog * 0.75;
+    } else if (phaseName !== 'SPAWN') {
+      attract = 0.62;
+    }
+
+    var damp = Math.pow(0.955, dtN);
+
+    for (var i = 0; i < PT_MAX; i++) {
+      // appear alpha
+      if (phaseName === 'SPAWN') {
+        var localT = (performance.now() - phaseStart) - dl[i];
+        ca[i] = localT < 0 ? 0 : Math.min(1, localT / 620);
+      } else {
+        ca[i] = 1;
+      }
+      if (ca[i] <= 0) continue;
+
+      var role = rl[i];
+
+      if (heartAuraMode) {
+        // AURA MODE
+        var dxa = px[i] - heartCX;
+        var dya = py[i] - heartCY;
+        var distA = Math.sqrt(dxa*dxa + dya*dya) || 1;
+        var angA = Math.atan2(dya, dxa);
+
+        if (role === 0) {
+          // HEART particle: ở yên trên silhouette, breathing nhẹ
+          var breath = Math.sin(t * 0.0018 + ph[i]) * 0.45;
+          px[i] += (tx[i] + breath * 0.3 - px[i]) * 0.08;
+          py[i] += (ty[i] + breath * 0.3 - py[i]) * 0.08;
+          vx[i] *= 0.85; vy[i] *= 0.85;
+          continue;
+        } else if (role === 1) {
+          // AURA: bay xoáy quanh heart
+          var sw = 0.0018 * (1 + dp[i] * 0.6);
+          vx[i] += -Math.sin(angA) * sw * dtN;
+          vy[i] +=  Math.cos(angA) * sw * dtN;
+          var ideal = heartW * (0.75 + dp[i] * 0.35)
+                    + Math.sin(ph[i] + t * 0.0008) * heartW * 0.06;
+          var pull = (ideal - distA) * 0.00060;
+          vx[i] += (dxa / distA) * pull * dtN;
+          vy[i] += (dya / distA) * pull * dtN;
+        } else if (role === 2) {
+          // ORBIT: chạy trên quỹ đạo ellipse
+          var oSpd = 0.0016 + dp[i] * 0.0008;
+          var na = angA + oSpd * dtN;
+          var oR = heartW * (0.72 + dp[i] * 0.55);
+          px[i] = heartCX + Math.cos(na) * oR;
+          py[i] = heartCY + Math.sin(na) * oR * 0.42;
+          vx[i] = 0; vy[i] = 0;
+          continue;
+        } else {
+          // FREE: drift nhẹ
+          ph[i] += dtN * 0.008;
+          vx[i] += Math.sin(ph[i]) * 0.020 * dtN;
+          vy[i] += Math.cos(ph[i] * 1.3) * 0.020 * dtN;
+        }
+      }
+      else if (attract > 0.01) {
+        var dx = tx[i] - px[i];
+        var dy = ty[i] - py[i];
+        var kk = 0.010 * attract;
+        vx[i] += dx * kk * dtN;
+        vy[i] += dy * kk * dtN;
+        if (phaseName === 'CONVERGE') {
+          var d = Math.sqrt(dx*dx + dy*dy) || 1;
+          var swirl = 0.009 * attract * (1 - phaseProgGlobal(t) * 0.55);
+          vx[i] += (-dy / d) * swirl * dtN;
+          vy[i] += ( dx / d) * swirl * dtN;
+        }
+      }
+      else {
+        // FREE WANDER
+        ph[i] += dtN * 0.008;
+        vx[i] += Math.sin(ph[i]) * 0.030 * dtN;
+        vy[i] += Math.cos(ph[i] * 1.4) * 0.030 * dtN;
+      }
+
+      vx[i] *= damp;
+      vy[i] *= damp;
+      px[i] += vx[i] * dtN;
+      py[i] += vy[i] * dtN;
+    }
+  }
+
+  function phaseProgGlobal(t) {
+    var dur = PHASES[phaseIdx].dur;
+    if (dur === Infinity) return 1;
+    return Math.min(1, (performance.now() - phaseStart) / dur);
+  }
+
+  /* ============================================================
+     11. RENDER PARTICLES
+     ============================================================ */
+  var parX = 0, parY = 0;
+  function renderParticles() {
+    if (!useGL) return;
+    if (canvasOpacity < 0.02) return;
+
+    // parallax offset — cập nhật mỗi frame
+    parX += ((targetTX * -40) - parX) * 0.08;
+    parY += ((targetTY * -40) - parY) * 0.08;
+
+    // fill interleaved buffer
+    for (var i = 0; i < PT_MAX; i++) {
+      gpuData[i * 5    ] = px[i];
+      gpuData[i * 5 + 1] = py[i];
+      gpuData[i * 5 + 2] = sz[i] * DPR;
+      gpuData[i * 5 + 3] = al[i] * ca[i] * canvasOpacity;
+      gpuData[i * 5 + 4] = dp[i];
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufPos);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, gpuData);
+
+    gl.uniform2f(uParallaxLoc, parX, parY);
+    gl.uniform1f(uGlobalAlphaLoc, 1.0);
+
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, PT_MAX);
+  }
+
+  /* ============================================================
+     12. SCENE APPLY (heart tilt + parallax layers)
+     ============================================================ */
+  function applyStartScene() {
+    scene.style.transform =
+      'rotateX(' + (-hRotX).toFixed(2) + 'deg) ' +
+      'rotateY(' + ( hRotY).toFixed(2) + 'deg) ' +
+      'rotateZ(' + ( hRotZ).toFixed(2) + 'deg)';
+
+    var mag = Math.min(1, Math.sqrt(txRot*txRot + tyRot*tyRot));
+
+    if (spotx)  spotx.style.transform  = 'translate3d(' + (txRot * 55).toFixed(1)  + '%,' + (tyRot * 60).toFixed(1)  + '%,0)';
+    if (glint)  { glint.style.transform = 'translate3d(' + (txRot * 190).toFixed(1) + '%,' + (tyRot * 190).toFixed(1) + '%,0)';
+                  glint.style.opacity   = (0.5 + 0.45 * mag).toFixed(2); }
+    if (tglow)  { tglow.style.transform = 'translate3d(' + (txRot * 7).toFixed(1)   + '%,' + (tyRot * 7).toFixed(1)   + '%,0)';
+                  tglow.style.opacity   = (mag * 0.9).toFixed(2); }
+    if (hsh)    { hsh.style.transform   = 'translate3d(' + (-txRot * 14).toFixed(1) + 'px,' + (-tyRot * 6).toFixed(1) + 'px,0)';
+                  hsh.style.opacity     = (0.5 + 0.35 * mag).toFixed(2); }
+    if (crescent) {
+      crescent.style.setProperty('--cx', (txRot * 10).toFixed(1) + 'px');
+      crescent.style.setProperty('--cy', (tyRot * 10).toFixed(1) + 'px');
+    }
+    if (crownEl) {
+      crownEl.style.setProperty('--kX', (txRot * 3).toFixed(2) + 'px');
+      crownEl.style.setProperty('--kY', (tyRot * 2).toFixed(2) + 'px');
+      crownEl.style.setProperty('--kR', (-14 + txRot * 3).toFixed(2) + 'deg');
+    }
+  }
+
+  function applyEnvScene() {
+    var a2 = rm ? 2 : 6;
+    if (envTilt) envTilt.style.transform =
+      'rotateX(' + (-tyRot * a2).toFixed(2) + 'deg) rotateY(' + (txRot * a2).toFixed(2) + 'deg)';
+  }
+
+  /* ============================================================
+     13. CROWN DROP
+     ============================================================ */
+  function crownDrop() {
+    if (!crownEl) return;
+    if (!hasWAAPI) { crownEl.style.opacity = '1'; return; }
+    crownEl.style.opacity = '0';
+    crownEl.animate([
+      { transform: 'translate3d(0, -46px, 0) scale(1.45) rotate(-28deg)', opacity: 0, offset: 0 },
+      { transform: 'translate3d(0,  6px,  0) scale(1.06) rotate(-16deg)', opacity: 1, offset: 0.72 },
+      { transform: 'translate3d(0,  0,    0) scale(1)    rotate(-14deg)', opacity: 1, offset: 1 }
+    ], { duration: 900, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'forwards' });
+  }
+
+  /* ============================================================
+     14. TITLE FLY OUT (behind heart → curved path → settle)
+     ============================================================ */
+  function titleFlyOut() {
+    if (!titleEl) return;
+    titleEl.style.transition = 'none';
+    titleEl.style.opacity = '1';
+    titleEl.style.transform = 'none';
+    if (!hasWAAPI) return;
+
+    function fly(el, delay, curve) {
+      if (!el) return;
+      var r = el.getBoundingClientRect();
+      var ecx = r.left + r.width / 2;
+      var ecy = r.top + r.height / 2;
+      var dx = heartCX - ecx;
+      var dy = heartCY - ecy;
+      el.animate([
+        { transform: 'translate3d(' + dx.toFixed(0) + 'px,' + dy.toFixed(0) + 'px,0) scale(.32) rotate(-28deg)',
+          opacity: 0, filter: 'blur(10px)', offset: 0 },
+        { transform: 'translate3d(' + (dx*0.5).toFixed(0) + 'px,' + (dy*0.5 + curve).toFixed(0) + 'px,0) scale(.72) rotate(-6deg)',
+          opacity: 0.55, filter: 'blur(4px)', offset: 0.5 },
+        { transform: 'translate3d(0,-6px,0) scale(1.045) rotate(2deg)',
+          opacity: 1, filter: 'blur(0)', offset: 0.82 },
+        { transform: 'translate3d(0,0,0) scale(1) rotate(0deg)',
+          opacity: 1, filter: 'blur(0)', offset: 1 }
+      ], { duration: 1400, easing: 'cubic-bezier(.25,.9,.3,1)', fill: 'both', delay: delay });
+    }
+    fly(eyebrow, 0,   -30);
+    fly(tt1,     220, -10);
+    fly(tt2,     420,  20);
+  }
+
+  /* ============================================================
+     15. TAP HEART
+     ============================================================ */
+  var tapLock = false;
+  function tapHeart() {
+    if (tapLock || screenState !== 'start' || phaseName !== 'IDLE') return;
+    tapLock = true;
+    screenState = 'opening';
+
+    if (hasWAAPI) {
+      hb.animate([
+        { transform: 'scale(1)' },
+        { transform: 'scale(0.955)', offset: 0.35 },
+        { transform: 'scale(1.06)',  offset: 0.7  },
+        { transform: 'scale(1)',     offset: 1    }
+      ], { duration: 380, easing: 'cubic-bezier(.3,.7,.3,1)' });
+
+      if (crownEl) crownEl.animate([
+        { transform: 'translate3d(0,0,0) rotate(-14deg)' },
+        { transform: 'translate3d(0,-5px,0) rotate(-9deg)', offset: 0.4 },
+        { transform: 'translate3d(0,0,0) rotate(-14deg)' }
+      ], { duration: 520, easing: 'ease-out' });
+
+      zoomer.style.willChange = 'transform';
+      zoomer.animate([
+        { transform: 'scale(1)',              offset: 0,    easing: 'cubic-bezier(.3,0,.2,1)' },
+        { transform: 'scale(1.045)',          offset: 0.14, easing: 'cubic-bezier(.5,.04,.22,1)' },
+        { transform: 'scale(7.5)',            offset: 1 }
+      ], { duration: 1100, fill: 'forwards' });
+    }
+
+    start.classList.add('go');
+    setTimeout(function () { start.classList.add('suck-on'); }, 350);
+    setTimeout(function () {
+      flood.style.transition = 'opacity .36s ease-in';
+      flood.style.opacity = 1;
+    }, 700);
+    setTimeout(enterEnvelope, 1060);
+  }
+
+  /* ============================================================
+     16. ENTER ENVELOPE
+     ============================================================ */
+  var envReady = false;
+  function enterEnvelope() {
+    start.classList.add('hide');
+    start.style.visibility = 'hidden';
+    screenState = 'env';
+    canvasFadeTarget = 0;
+    pointerActive = false; targetTX = 0; targetTY = 0;
+    letter.classList.add('on');
+    scrollEl.scrollTop = 0;
+    flood.style.transition = 'opacity .9s ease-out';
+    flood.style.opacity = 0;
+
+    if (hasWAAPI) {
+      envIn.animate([
+        { opacity: 0, transform: 'translate3d(0,46px,0) scale(.62) rotateZ(-6deg)' },
+        { opacity: 1, transform: 'translate3d(0,-7px,0) scale(1.035) rotateZ(1.2deg)', offset: 0.62 },
+        { opacity: 1, transform: 'translate3d(0,0,0) scale(1) rotateZ(0deg)' }
+      ], { duration: 1000, easing: 'cubic-bezier(.22,.85,.3,1)', fill: 'backwards' });
+    }
+    setTimeout(function () { hint2.classList.add('show'); }, 1300);
+    setTimeout(function () { envReady = true; tapLock = false; }, 1050);
+  }
+
+  /* ============================================================
+     17. TAP ENVELOPE
+     ============================================================ */
+  var envTapLock = false;
+  function tapEnvelope() {
+    if (envTapLock || !envReady || screenState !== 'env') return;
+    envTapLock = true;
+    screenState = 'opening';
+    hint2.classList.remove('show');
+
+    if (hasWAAPI) {
+      env.animate([
+        { transform: 'scale(1) translateY(0)' },
+        { transform: 'scale(0.955) translateY(5px)' }
+      ], { duration: 170, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' });
+
+      setTimeout(function () {
+        env.animate([
+          { transform: 'scale(0.955) translateY(5px)' },
+          { transform: 'scale(1.025) translateY(-3px)', offset: 0.42 },
+          { transform: 'scale(1) translateY(0)' }
+        ], { duration: 480, easing: 'cubic-bezier(.2,.9,.3,1)', fill: 'forwards' });
+      }, 180);
+
+      var sb = seal.querySelector('.sbody');
+      var sg = seal.querySelector('.sglow');
+      sb.animate([
+        { transform: 'scale(1)', opacity: 1 },
+        { transform: 'scale(1.18)', opacity: 1, offset: 0.55 },
+        { transform: 'scale(1.38)', opacity: 0 }
+      ], { duration: 340, delay: 110, easing: 'ease-in', fill: 'forwards' });
+      sg.animate([
+        { opacity: 0, transform: 'scale(.6)' },
+        { opacity: 1, transform: 'scale(1.1)', offset: 0.5 },
+        { opacity: 0, transform: 'scale(1.7)' }
+      ], { duration: 560, delay: 90, easing: 'ease-out', fill: 'forwards' });
+    }
+
+    setTimeout(function () {
+      if (!hasWAAPI) return;
+      var fe = 'cubic-bezier(.5,-.2,.2,1)';
+      flap.animate([{ transform: 'rotateX(0deg)' }, { transform: 'rotateX(180deg)' }],
+        { duration: 620, easing: fe, fill: 'forwards' });
+      fout.animate([{ opacity: 1 }, { opacity: 1, offset: 0.5 }, { opacity: 0, offset: 0.5001 }, { opacity: 0 }],
+        { duration: 620, easing: fe, fill: 'forwards' });
+      fin.animate([{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1, offset: 0.5001 }, { opacity: 1 }],
+        { duration: 620, easing: fe, fill: 'forwards' });
+      eshadow.animate([{ opacity: 0 }, { opacity: 1 }],
+        { duration: 380, delay: 230, easing: 'ease-out', fill: 'forwards' });
+      setTimeout(function () { flap.style.zIndex = 1; }, 300);
+    }, 250);
+
+    setTimeout(function () {
+      if (!hasWAAPI) { sheet.style.opacity = '1'; sheet.style.transform = 'none'; return; }
+      var Wd = sheet.offsetWidth, Hd = sheet.offsetHeight;
+      var E  = env.offsetWidth,   Eh = env.offsetHeight;
+      var s0 = Math.min(0.9 * E / Wd, 1);
+      var y0 = -0.43 * Eh + Hd * s0 / 2;
+      var yA = y0 - 0.36 * Eh;
+      function T(y, s, r) { return 'translate3d(0,' + y.toFixed(1) + 'px,0) scale(' + s.toFixed(3) + ') rotate(' + r + 'deg)'; }
+      sheet.style.willChange = 'transform, opacity';
+      sheet.animate([
+        { opacity: 0, transform: T(y0, s0, -2) },
+        { opacity: 1, transform: T(yA, s0 * 1.03, -2), offset: 0.25 },
+        { opacity: 1, transform: T(-10, 1.012, 0.3),   offset: 0.80 },
+        { opacity: 1, transform: T(0, 1, 0) }
+      ], { duration: 1000, delay: 700, easing: 'cubic-bezier(.3,.5,.6,.9)', fill: 'forwards' });
+    }, 150);
+
+    setTimeout(function () {
+      if (!hasWAAPI) return;
+      efront.animate([
+        { opacity: 1, transform: 'translate3d(0,0,0) scale(1)' },
+        { opacity: 0, transform: 'translate3d(0,14px,0) scale(.97)' }
+      ], { duration: 420, easing: 'ease-in', fill: 'forwards' });
+    }, 1050);
+
+    setTimeout(function () {
+      if (!hasWAAPI) return;
+      lsweep.animate([
+        { opacity: 0, transform: 'translate3d(-130%,0,0) rotate(16deg)' },
+        { opacity: 1, offset: 0.2 },
+        { opacity: 1, offset: 0.7 },
+        { opacity: 0, transform: 'translate3d(480%,0,0) rotate(16deg)' }
+      ], { duration: 800, easing: 'ease-in-out', fill: 'both' });
+    }, 1350);
+
+    setTimeout(revealLetter, 1500);
+    setTimeout(finishOpen, 1750);
+  }
+
+  function revealLetter() {
+    var els = letter.querySelectorAll('.rv');
+    for (var i = 0; i < els.length; i++) {
+      (function (e, k) {
+        setTimeout(function () { e.classList.add('show'); }, k * 620);
+        setTimeout(function () { e.classList.add('done'); }, k * 620 + 950);
+      })(els[i], i);
+    }
+  }
+  function finishOpen() {
+    if (sheet && hasWAAPI) {
+      sheet.style.opacity = '1';
+      sheet.style.transform = 'none';
+      sheet.style.willChange = '';
+    }
+    screenState = 'open';
+    letter.classList.add('open');
+    envTapLock = false;
+    stopLoop();
+  }
+
+  /* ============================================================
+     18. CLOSE LETTER → RESET
+     ============================================================ */
+  function closeLetter() {
+    if (screenState !== 'open') return;
+    flood.style.transition = 'opacity .4s ease-in';
+    flood.style.opacity = 1;
+
+    setTimeout(function () {
+      if (hasWAAPI) {
+        [hb, crownEl, tt1, tt2, eyebrow, env, sheet, flap, fout, fin, eshadow, efront, lsweep, envIn, zoomer].forEach(function (el) {
+          if (el && el.getAnimations) el.getAnimations().forEach(function (a) { try { a.cancel(); } catch (e) {} });
+        });
+      }
+      letter.classList.remove('on', 'open');
+      start.classList.remove('go', 'suck-on', 'hide', 'ready');
+      start.style.visibility = '';
+      if (sheet) sheet.style.cssText = '';
+      if (flap)  flap.style.zIndex = '';
+      if (titleEl) { titleEl.style.transition = ''; titleEl.style.opacity = ''; titleEl.style.transform = ''; }
+      if (textOrbit) textOrbit.classList.remove('show');
+      if (crownEl) crownEl.style.opacity = '';
+
+      var rvs = letter.querySelectorAll('.rv');
+      for (var i = 0; i < rvs.length; i++) rvs[i].classList.remove('show', 'done');
+
+      canvasFadeTarget = 0;
+      canvasOpacity = 0;
+      heartAuraMode = false;
+      pointerActive = false;
+      targetTX = 0; targetTY = 0; txRot = 0; tyRot = 0;
+      hRotX = hRotY = hRotZ = 0;
+      screenState = 'start';
+      tapLock = false;
+      envTapLock = false;
+      envReady = false;
+      phaseIdx = 0;
+      phaseName = 'BLACK';
+      phaseStart = 0;
+      lastT = 0;
+
+      computeHeartBounds();
+      sizeCanvas();
+      initParticles();
+      startLoop();
+
+      flood.style.transition = 'opacity .7s ease-out';
+      flood.style.opacity = 0;
+    }, 420);
+  }
+
+  $('closeBtn').addEventListener('click', closeLetter);
+
+  /* ============================================================
+     19. RESIZE
+     ============================================================ */
+  var rzT = 0;
+  function onResize() {
+    clearTimeout(rzT);
+    rzT = setTimeout(function () {
+      sizeCanvas();
+      computeHeartBounds();
+      // cập nhật target theo kích thước mới (không rebuild toàn bộ)
+      if (phaseName !== 'BLACK' && phaseName !== 'SPAWN') {
+        for (var i = 0; i < PT_MAX; i++) {
+          if (rl[i] === 3) {
+            tx[i] = rand(0, W);
+            ty[i] = rand(0, H);
+          }
+        }
+      }
+    }, 150);
+  }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', function () { setTimeout(onResize, 220); });
+
+  /* ============================================================
+     20. VISIBILITY
+     ============================================================ */
+  document.addEventListener('visibilitychange', function () {
+    pointerActive = false;
+    if (document.hidden) stopLoop();
+    else if (screenState !== 'open') startLoop();
+  });
+  window.addEventListener('blur', function () { pointerActive = false; });
+
+  /* ============================================================
+     21. PERFORMANCE PROBE (90 frame đầu, tự hạ tải nếu cần)
+     ============================================================ */
+  function runProbe() {
+    if (rm || tier === 'verylow') return;
+    var probeFrames = 0, probeStart = 0, done = false;
+    function pf(t) {
+      if (done) return;
+      if (!probeStart) probeStart = t;
+      probeFrames++;
+      if (probeFrames < 90) { requestAnimationFrame(pf); return; }
+      var elapsed = t - probeStart;
+      var fps = probeFrames / (elapsed / 1000);
+      done = true;
+      if (fps < 38) {
+        // hạ cấp: giảm particle count, tắt connection
+        var newCount = Math.max(8000, Math.floor(PT_MAX * 0.55));
+        // giảm xuống — particle dư sẽ có alpha = 0
+        for (var i = newCount; i < PT_MAX; i++) ca[i] = 0;
+        console.log('[perf probe] fps=' + fps.toFixed(1) + ' → giảm particle còn ' + newCount);
+        PT_MAX = newCount;
+      }
+    }
+    requestAnimationFrame(pf);
+  }
+
+  /* ============================================================
+     22. INIT
+     ============================================================ */
+  function init() {
+    if (crownEl) crownEl.style.opacity = '0';
+    if (titleEl) {
+      titleEl.style.transition = 'none';
+      titleEl.style.opacity = '0';
+    }
+    if (glCanvas) {
+      glCanvas.style.zIndex = '2';
+    }
+
+    sizeCanvas();
+
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        computeHeartBounds();
+        initParticles();
+        phaseIdx = 0;
+        phaseName = 'BLACK';
+        phaseStart = 0;
+        canvasFadeTarget = 0;
+        canvasOpacity = 0;
+        lastT = 0;
+        startLoop();
+        setTimeout(runProbe, 200);
+      });
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
